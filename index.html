@@ -6,47 +6,65 @@
   <!-- โหลด MQTT Library -->
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <style>
-    body { font-family: 'Segoe UI', Tahoma, sans-serif; text-align: center; background: #eef2f5; padding-top: 40px; margin: 0; }
-    .card { background: white; max-width: 400px; margin: auto; padding: 25px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; text-align: center; background: #eef2f5; padding: 30px 15px; margin: 0; }
+    .card { background: white; max-width: 420px; margin: auto; padding: 25px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
     
-    .status-box { font-size: 20px; font-weight: bold; margin: 10px 0 20px 0; padding: 14px; border-radius: 10px; }
+    .status-box { font-size: 18px; font-weight: bold; margin: 8px 0 16px 0; padding: 12px; border-radius: 10px; }
     .open { background: #d4edda; color: #155724; }
     .closed { background: #f8d7da; color: #721c24; }
     
-    /* สไตล์กล่องสถานะที่จอดรถ */
     .parked { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
     .empty { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
 
-    .section-title { font-size: 15px; font-weight: bold; color: #495057; text-align: left; margin-left: 5px; }
+    .light-on { background: #fef08a; color: #854d0e; border: 1px solid #fde047; }
+    .light-off { background: #e2e8f0; color: #475569; border: 1px solid #cbd5e1; }
 
-    button { width: 100%; padding: 14px; font-size: 16px; font-weight: bold; margin: 6px 0; border: none; border-radius: 8px; cursor: pointer; color: white; transition: 0.2s; }
-    .btn-open { background: #28a745; }
-    .btn-close { background: #dc3545; }
-    button:hover { opacity: 0.85; }
+    .section-title { font-size: 15px; font-weight: bold; color: #334155; text-align: left; margin: 12px 0 4px 5px; }
+
+    .btn-group { display: flex; gap: 8px; margin-bottom: 10px; }
+    button { flex: 1; padding: 12px; font-size: 15px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; color: white; transition: 0.2s; }
+    
+    .btn-open { background: #16a34a; }
+    .btn-close { background: #dc2626; }
+    
+    .btn-light-on { background: #eab308; color: #1e293b; }
+    .btn-light-off { background: #64748b; }
+    .btn-auto { background: #0284c7; }
+    button:hover { opacity: 0.88; }
   </style>
 </head>
 <body>
 
   <div class="card">
     <h2>🚗 Smart Garage IoT</h2>
-    <p>การเชื่อมต่อ: <span id="connState" style="color: orange; font-weight: bold;">กำลังเชื่อมต่อ...</span></p>
-    <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+    <p style="margin-top: -5px;">การเชื่อมต่อ: <span id="connState" style="color: orange; font-weight: bold;">กำลังเชื่อมต่อ...</span></p>
+    <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
 
     <!-- ส่วนที่ 1: สถานะที่จอดรถ -->
-    <div class="section-title">🅿️ สถานะช่องจอดรถ (ไฟโรงรถ):</div>
+    <div class="section-title">🅿️ สถานะช่องจอดรถ:</div>
     <div id="parkBox" class="status-box empty">กำลังตรวจสอบ...</div>
 
-    <!-- ส่วนที่ 2: สถานะไม้กั้น -->
-    <div class="section-title">🚪 สถานะไม้กั้นทางเข้า:</div>
-    <div id="gateBox" class="status-box closed">กำลังโหลดสถานะ...</div>
+    <!-- ส่วนที่ 2: ควบคุมไฟโรงจอดรถ -->
+    <div class="section-title">💡 ไฟโรงจอดรถ (สถานะ: <span id="lightStateText">--</span>):</div>
+    <div id="lightBox" class="status-box light-off">กำลังโหลด...</div>
+    <div class="btn-group">
+      <button class="btn-light-on" onclick="sendLight('ON')">เปิดไฟ</button>
+      <button class="btn-light-off" onclick="sendLight('OFF')">ปิดไฟ</button>
+      <button class="btn-auto" onclick="sendLight('AUTO')">โหมดออโต้</button>
+    </div>
 
-    <!-- ปุ่มควบคุมไม้กั้น -->
-    <button class="btn-open" onclick="sendCommand('OPEN')">ยกไม้กั้นขึ้น (เปิดค้าง)</button>
-    <button class="btn-close" onclick="sendCommand('CLOSE')">เอาไม้กั้นลง (ปิด / ออโต้)</button>
+    <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
+
+    <!-- ส่วนที่ 3: สถานะ & ปุ่มควบคุมไม้กั้น -->
+    <div class="section-title">🚪 ไม้กั้นทางเข้า:</div>
+    <div id="gateBox" class="status-box closed">กำลังโหลดสถานะ...</div>
+    <div class="btn-group">
+      <button class="btn-open" onclick="sendGate('OPEN')">เปิดไม้กั้น</button>
+      <button class="btn-close" onclick="sendGate('CLOSE')">ปิดไม้กั้น</button>
+    </div>
   </div>
 
   <script>
-    // ข้อมูลเชื่อมต่อ HiveMQ Cloud
     const brokerUrl = "wss://2e0482f82f3c4eda8299889369aac1b2.s1.eu.hivemq.cloud:8884/mqtt";
     const options = {
       username: "nattawat",
@@ -58,17 +76,18 @@
 
     client.on('connect', () => {
       document.getElementById('connState').innerText = "เชื่อมต่อสำเร็จ";
-      document.getElementById('connState').style.color = "#28a745";
+      document.getElementById('connState').style.color = "#16a34a";
       
-      // สมัครรับข้อมูลทั้งสถานะไม้กั้นและสถานะที่จอดรถ
+      // ติดตาม Topic ต่างๆ
       client.subscribe("garage/gate/status");
       client.subscribe("garage/park/status");
+      client.subscribe("garage/light/status");
     });
 
     client.on('message', (topic, message) => {
       const msg = message.toString();
 
-      // แสดงผลสถานะไม้กั้น
+      // 1. สถานะไม้กั้น
       if (topic === "garage/gate/status") {
         const gateBox = document.getElementById('gateBox');
         if (msg === "OPEN") {
@@ -80,21 +99,40 @@
         }
       }
 
-      // แสดงผลสถานะที่จอดรถ
+      // 2. สถานะที่จอดรถ
       if (topic === "garage/park/status") {
         const parkBox = document.getElementById('parkBox');
         if (msg === "PARKED") {
-          parkBox.innerText = "🚗 มีรถจอดอยู่ (ไฟดับ)";
+          parkBox.innerText = "🚗 มีรถจอดอยู่";
           parkBox.className = "status-box parked";
         } else {
-          parkBox.innerText = "🟢 ที่จอดว่าง (ไฟติด)";
+          parkBox.innerText = "🟢 ที่จอดว่าง";
           parkBox.className = "status-box empty";
+        }
+      }
+
+      // 3. สถานะหลอดไฟ
+      if (topic === "garage/light/status") {
+        const lightBox = document.getElementById('lightBox');
+        const lightText = document.getElementById('lightStateText');
+        if (msg === "ON") {
+          lightText.innerText = "เปิด";
+          lightBox.innerText = "💡 หลอดไฟติดสว่าง";
+          lightBox.className = "status-box light-on";
+        } else {
+          lightText.innerText = "ปิด";
+          lightBox.innerText = "🌑 หลอดไฟดับ";
+          lightBox.className = "status-box light-off";
         }
       }
     });
 
-    function sendCommand(cmd) {
+    function sendGate(cmd) {
       client.publish("garage/gate/command", cmd);
+    }
+
+    function sendLight(cmd) {
+      client.publish("garage/light/command", cmd);
     }
   </script>
 </body>
