@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>Smart Garage - ควบคุมไม้กั้น</title>
+  <!-- โหลด MQTT Library -->
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; text-align: center; background: #eef2f5; padding-top: 60px; }
+    .card { background: white; max-width: 380px; margin: auto; padding: 30px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    .status-box { font-size: 22px; font-weight: bold; margin: 25px 0; padding: 15px; border-radius: 10px; }
+    .open { background: #d4edda; color: #155724; }
+    .closed { background: #f8d7da; color: #721c24; }
+    button { width: 100%; padding: 14px; font-size: 16px; font-weight: bold; margin: 8px 0; border: none; border-radius: 8px; cursor: pointer; color: white; transition: 0.2s; }
+    .btn-open { background: #28a745; }
+    .btn-close { background: #dc3545; }
+    button:hover { opacity: 0.85; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>🚗 ระบบควบคุมไม้กั้น IoT</h2>
+    <p>สถานะระบบ: <span id="connState" style="color: orange; font-weight: bold;">กำลังเชื่อมต่อ...</span></p>
+
+    <div>สถานะไม้กั้น:</div>
+    <div id="statusBox" class="status-box closed">กำลังโหลดสถานะ...</div>
+
+    <button class="btn-open" onclick="sendCommand('OPEN')">ยกไม้กั้นขึ้น (เปิด)</button>
+    <button class="btn-close" onclick="sendCommand('CLOSE')">เอาไม้กั้นลง (ปิด / ออโต้)</button>
+  </div>
+
+  <script>
+    // ข้อมูลเชื่อมต่อ WebSocket ของ HiveMQ Cloud
+    const brokerUrl = "wss://2e0482f82f3c4eda8299889369aac1b2.s1.eu.hivemq.cloud:8884/mqtt";
+    const options = {
+      username: "nattawat",
+      password: "nattawat48",
+      clientId: "WebController_" + Math.random().toString(16).substr(2, 8)
+    };
+
+    const client = mqtt.connect(brokerUrl, options);
+
+    client.on('connect', () => {
+      document.getElementById('connState').innerText = "เชื่อมต่อสำเร็จ";
+      document.getElementById('connState').style.color = "#28a745";
+      client.subscribe("garage/gate/status");
+    });
+
+    client.on('message', (topic, message) => {
+      const msg = message.toString();
+      const statusBox = document.getElementById('statusBox');
+      if (msg === "OPEN") {
+        statusBox.innerText = "ไม้กั้นเปิดอยู่ (OPEN)";
+        statusBox.className = "status-box open";
+      } else {
+        statusBox.innerText = "ไม้กั้นปิดอยู่ (CLOSED)";
+        statusBox.className = "status-box closed";
+      }
+    });
+
+    function sendCommand(cmd) {
+      client.publish("garage/gate/command", cmd);
+    }
+  </script>
+</body>
+</html>
